@@ -1,7 +1,6 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { X, Save } from "lucide-react"
+import { X, Save, Loader2 } from "lucide-react"
+import api from "../services/api"
 
 const BookmarkModal = ({ isOpen, onClose, onSave, bookmark }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +10,8 @@ const BookmarkModal = ({ isOpen, onClose, onSave, bookmark }) => {
     tags: "",
     isFavorite: false,
   })
+
+  const [isFetchingTitle, setIsFetchingTitle] = useState(false)
 
   useEffect(() => {
     if (bookmark) {
@@ -32,6 +33,35 @@ const BookmarkModal = ({ isOpen, onClose, onSave, bookmark }) => {
     }
   }, [bookmark, isOpen])
 
+  useEffect(() => {
+    const fetchTitle = async () => {
+      if (!formData.url || formData.title.trim()) return
+  
+      setIsFetchingTitle(true)
+      try {
+        console.log('hello from there');
+        const res = await api.get(`/bookmarks/fetch-title`, {
+          params: { url: formData.url }
+        })
+
+        console.log(res);
+  
+        if (res.data?.title) {
+          setFormData((prev) => ({ ...prev, title: res.data.title }))
+        }
+      } catch (err) {
+        console.error("Failed to fetch title:", err)
+      } finally {
+        setIsFetchingTitle(false)
+      }
+    }
+  
+    const debounce = setTimeout(fetchTitle, 1000) // wait for 1s
+  
+    return () => clearTimeout(debounce)
+  }, [formData.url, formData.title])
+  
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const tags = formData.tags
@@ -41,6 +71,7 @@ const BookmarkModal = ({ isOpen, onClose, onSave, bookmark }) => {
 
     onSave({
       ...formData,
+      title: formData.title.trim() === "" ? undefined : formData.title,
       tags,
     })
   }
@@ -84,7 +115,10 @@ const BookmarkModal = ({ isOpen, onClose, onSave, bookmark }) => {
 
           <div className="mb-4">
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Title
+              Title{" "}
+              {isFetchingTitle && (
+                <Loader2 className="inline w-4 h-4 animate-spin text-gray-400 ml-1" />
+              )}
             </label>
             <input
               type="text"
@@ -93,7 +127,7 @@ const BookmarkModal = ({ isOpen, onClose, onSave, bookmark }) => {
               value={formData.title}
               onChange={handleChange}
               className="input-field"
-              placeholder="Title will be auto-fetched if not provided"
+              placeholder="Auto-fetched from URL if empty"
             />
           </div>
 

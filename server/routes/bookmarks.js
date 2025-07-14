@@ -7,6 +7,7 @@ const router = express.Router()
 
 const bookmarkValidation = [body("url").isURL().withMessage("Please enter a valid URL")]
 
+router.get('/fetch-title', bookmarkController.fetchTitleFromUrl);
 router.post("/", auth.auth, bookmarkValidation, bookmarkController.createBookmark)
 router.get("/", auth.auth, bookmarkController.getBookmarks)
 router.get("/:id", auth.auth, bookmarkController.getBookmarkById)

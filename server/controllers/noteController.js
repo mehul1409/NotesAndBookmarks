@@ -31,8 +31,13 @@ exports.getNotes = async (req, res) => {
 
     // Text search
     if (q) {
-      query.$text = { $search: q }
+      query.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { tags: { $regex: q, $options: "i" } }
+      ]
     }
+    
 
     // Tag filter
     if (tags) {

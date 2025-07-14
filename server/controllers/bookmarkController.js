@@ -3,13 +3,33 @@ const { validationResult } = require("express-validator")
 const axios = require("axios")
 const cheerio = require("cheerio")
 
-const fetchTitle = async (url) => {
+exports.fetchTitleFromUrl = async (req, res) => {
+  const url = req.query.url
+
+  if (!url) {
+    return res.status(400).json({ error: "URL is required" })
+  }
+
   try {
-    const response = await axios.get(url, { timeout: 5000 })
+    const response = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Connection: "keep-alive",
+      },
+      timeout: 7000,
+      maxRedirects: 5,
+    })
+
     const $ = cheerio.load(response.data)
-    return $("title").text().trim() || "Untitled"
-  } catch (error) {
-    return "Untitled"
+    const title = $("title").text().trim()
+
+    res.json({ title: title || "Untitled" })
+  } catch (err) {
+    console.error("Error fetching title:", err.message)
+    res.status(500).json({ error: "Failed to fetch title" })
   }
 }
 
@@ -21,11 +41,6 @@ exports.createBookmark = async (req, res) => {
     }
 
     let { url, title, description, tags, isFavorite } = req.body
-
-    // Auto-fetch title if not provided
-    if (!title) {
-      title = await fetchTitle(url)
-    }
 
     const bookmark = new Bookmark({
       url,
@@ -50,7 +65,7 @@ exports.getBookmarks = async (req, res) => {
 
     // Text search
     if (q) {
-      query.$text = { $search: q }
+      query.title = { $regex: q, $options: "i" }
     }
 
     // Tag filter

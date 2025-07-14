@@ -1,4 +1,3 @@
-"use client"
 import { Edit, Trash2, Heart, Calendar, ExternalLink } from "lucide-react"
 
 const BookmarkCard = ({ bookmark, onEdit, onDelete, onToggleFavorite }) => {

@@ -1,4 +1,3 @@
-"use client"
 import { Edit, Trash2, Heart, Calendar } from "lucide-react"
 
 const NoteCard = ({ note, onEdit, onDelete, onToggleFavorite }) => {
